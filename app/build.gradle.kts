@@ -6,15 +6,15 @@ plugins {
 }
 
 android {
-    namespace = "com.example.tatekaemaru"
+    namespace = "tk.horiuchi.tatekaemaru"
     compileSdk = 36
 
     defaultConfig {
-        applicationId = "com.example.tatekaemaru"
+        applicationId = "tk.horiuchi.tatekaemaru"
         minSdk = 26
         targetSdk = 36
         versionCode = 1
-        versionName = "0.1.0"
+        versionName = "1.0.0"
     }
 
     buildFeatures {
@@ -24,6 +24,16 @@ android {
 
 kotlin {
     jvmToolchain(21)
+}
+
+android.applicationVariants.all {
+    outputs.all {
+        val appName = project.findProperty("APP_NAME") as? String ?: "TatekaeMaru"
+        val version = versionName ?: "0.0.0"
+
+        (this as com.android.build.gradle.internal.api.BaseVariantOutputImpl)
+            .outputFileName = "${appName}-${version}.apk"
+    }
 }
 
 dependencies {

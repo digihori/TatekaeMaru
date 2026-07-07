@@ -1,6 +1,6 @@
 # たてかえ丸
 
-レジャー時の立替精算を行うAndroidアプリのベースプロジェクトです。
+レジャー時の立替精算を行うAndroidアプリのプロジェクトです。
 
 ## 現在できること
 
@@ -66,7 +66,7 @@ LINEへ共有は `jp.naver.line.android` を指定した Android 標準共有 In
 URL は以下のファイルで変更できます。
 
 ```kotlin
-app/src/main/java/com/example/tatekaemaru/ui/PrivacyPolicyConfig.kt
+app/src/main/java/tk/horiuchi/tatekaemaru/ui/PrivacyPolicyConfig.kt
 ```
 
 初期値:
@@ -74,5 +74,3 @@ app/src/main/java/com/example/tatekaemaru/ui/PrivacyPolicyConfig.kt
 ```text
 https://raw.githubusercontent.com/digihori/TatekaeMaru/main/PRIVACY_POLICY.md
 ```
-
-GitHub リポジトリ直下に `PRIVACY_POLICY.md` を置いてください。

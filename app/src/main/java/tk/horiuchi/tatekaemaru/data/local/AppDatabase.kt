@@ -7,10 +7,10 @@ import androidx.room.RoomDatabase
 
 @Database(
     entities = [
-        EventEntity::class,
-        MemberEntity::class,
-        ExpenseEntity::class,
-        ExpenseTargetEntity::class
+        tk.horiuchi.tatekaemaru.data.local.EventEntity::class,
+        tk.horiuchi.tatekaemaru.data.local.MemberEntity::class,
+        tk.horiuchi.tatekaemaru.data.local.ExpenseEntity::class,
+        tk.horiuchi.tatekaemaru.data.local.ExpenseTargetEntity::class
     ],
     version = 1,
     exportSchema = false

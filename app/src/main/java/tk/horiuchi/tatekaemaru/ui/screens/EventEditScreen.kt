@@ -7,7 +7,6 @@ import androidx.compose.foundation.layout.fillMaxSize
 import androidx.compose.foundation.layout.fillMaxWidth
 import androidx.compose.foundation.layout.padding
 import androidx.compose.foundation.lazy.LazyColumn
-import androidx.compose.foundation.lazy.items
 import androidx.compose.foundation.text.KeyboardOptions
 import androidx.compose.material3.Button
 import androidx.compose.material3.Card
@@ -34,7 +33,20 @@ import tk.horiuchi.tatekaemaru.data.Event
 import tk.horiuchi.tatekaemaru.data.Expense
 import tk.horiuchi.tatekaemaru.data.GasInfo
 import tk.horiuchi.tatekaemaru.data.Member
-import java.util.UUID
+import tk.horiuchi.tatekaemaru.ui.FormatUtils
+import java.time.LocalDate
+import java.time.format.DateTimeFormatter
+import androidx.compose.material.icons.Icons
+import androidx.compose.material.icons.automirrored.filled.ArrowBack
+import androidx.compose.material3.Icon
+import androidx.compose.material3.IconButton
+import androidx.compose.material3.TopAppBarDefaults
+import androidx.compose.ui.graphics.Color
+import androidx.compose.material3.AlertDialog
+import androidx.compose.foundation.layout.Spacer
+import androidx.compose.foundation.layout.height
+import androidx.compose.runtime.mutableStateListOf
+import androidx.compose.foundation.lazy.items
 
 @OptIn(ExperimentalMaterial3Api::class)
 @Composable
@@ -42,7 +54,8 @@ fun EventEditScreen(
     event: Event,
     onEventChange: (Event) -> Unit,
     onBack: () -> Unit,
-    onSave: () -> Unit,
+    onSave: (Event) -> Unit,
+    onSaveAndShowSettlement: (Event) -> Unit,
     onShowSettlement: () -> Unit
 ) {
     var memberName by remember { mutableStateOf("") }
@@ -55,6 +68,34 @@ fun EventEditScreen(
     var distanceKm by remember { mutableStateOf("") }
     var fuelEfficiency by remember { mutableStateOf("") }
     var gasPrice by remember { mutableStateOf("") }
+    var showUnsavedDialog by remember { mutableStateOf(false) }
+    var eventName by remember { mutableStateOf(event.name) }
+    val members = remember { mutableStateListOf(*event.members.toTypedArray()) }
+    val expenses = remember { mutableStateListOf(*event.expenses.toTypedArray()) }
+
+    fun buildCurrentEvent(): Event {
+        return Event(
+            id = event.id,
+            name = eventName,
+            date = event.date,
+            members = members.toList(),
+            expenses = expenses.toList()
+        )
+    }
+
+    fun handleBack() {
+        if (buildCurrentEvent() != event) {
+            showUnsavedDialog = true
+        } else {
+            onBack()
+        }
+    }
+
+    fun saveEvent() {
+        val updatedEvent = buildCurrentEvent()
+        onEventChange(updatedEvent)
+        onSave(updatedEvent)
+    }
 
     fun calculatedGasAmount(): Int? {
         val distance = distanceKm.toDoubleOrNull()
@@ -80,7 +121,26 @@ fun EventEditScreen(
     }
 
     Scaffold(
-        topBar = { TopAppBar(title = { Text("イベント編集") }) }
+        topBar = {
+            TopAppBar(
+                title = { Text("イベント編集") },
+                navigationIcon = {
+                    IconButton(
+                        //onClick = onBack
+                        onClick = { handleBack() }
+                    ) {
+                        Icon(
+                            imageVector = Icons.AutoMirrored.Filled.ArrowBack,
+                            contentDescription = "戻る"
+                        )
+                    }
+                },
+                colors = TopAppBarDefaults.topAppBarColors(
+                    containerColor = Color(0xFF1976D2),
+                    titleContentColor = Color.White,
+                    navigationIconContentColor = Color.White
+                )
+            ) }
     ) { padding ->
         LazyColumn(
             modifier = Modifier
@@ -89,11 +149,18 @@ fun EventEditScreen(
                 .fillMaxSize(),
             verticalArrangement = Arrangement.spacedBy(16.dp)
         ) {
+            val placeholderText =
+                "イベント" + LocalDate.now().format(
+                    DateTimeFormatter.ofPattern("yyyy/MM/dd")
+                )
             item {
                 OutlinedTextField(
-                    value = event.name,
-                    onValueChange = { onEventChange(event.copy(name = it)) },
+                    //value = event.name,
+                    //onValueChange = { onEventChange(event.copy(name = it)) },
+                    value = eventName,
+                    onValueChange = { eventName = it },
                     label = { Text("イベント名") },
+                    placeholder = { Text(placeholderText) },
                     modifier = Modifier.fillMaxWidth(),
                     singleLine = true
                 )
@@ -106,7 +173,7 @@ fun EventEditScreen(
                         verticalArrangement = Arrangement.spacedBy(8.dp)
                     ) {
                         Text("参加メンバー")
-                        event.members.forEach { member ->
+                        members.forEach { member ->
                             Row(
                                 modifier = Modifier.fillMaxWidth(),
                                 horizontalArrangement = Arrangement.SpaceBetween,
@@ -114,12 +181,24 @@ fun EventEditScreen(
                             ) {
                                 Text(member.name)
                                 TextButton(onClick = {
-                                    val newMembers = event.members.filterNot { it.id == member.id }
-                                    val newExpenses = event.expenses
+                                    //val newMembers = event.members.filterNot { it.id == member.id }
+                                    //val newExpenses = event.expenses
+                                    //    .filterNot { it.payerId == member.id }
+                                    //    .map { it.copy(targetMemberIds = it.targetMemberIds - member.id) }
+                                    //onEventChange(event.copy(members = newMembers, expenses = newExpenses))
+                                    members.removeAll { it.id == member.id }
+
+                                    val updatedExpenses = expenses
                                         .filterNot { it.payerId == member.id }
-                                        .map { it.copy(targetMemberIds = it.targetMemberIds - member.id) }
-                                    onEventChange(event.copy(members = newMembers, expenses = newExpenses))
-                                    if (payerId == member.id) payerId = newMembers.firstOrNull()?.id.orEmpty()
+                                        .map {
+                                            it.copy(
+                                                targetMemberIds = it.targetMemberIds - member.id
+                                            )
+                                        }
+
+                                    expenses.clear()
+                                    expenses.addAll(updatedExpenses)
+                                    if (payerId == member.id) payerId = members.firstOrNull()?.id.orEmpty()
                                     targetMemberIds = targetMemberIds - member.id
                                 }) {
                                     Text("削除")
@@ -141,7 +220,8 @@ fun EventEditScreen(
                                 val name = memberName.trim()
                                 if (name.isNotEmpty()) {
                                     val member = Member(name = name)
-                                    onEventChange(event.copy(members = event.members + member))
+                                    //onEventChange(event.copy(members = event.members + member))
+                                    members.add(member)
                                     if (payerId.isBlank()) payerId = member.id
                                     targetMemberIds = targetMemberIds + member.id
                                     memberName = ""
@@ -224,17 +304,17 @@ fun EventEditScreen(
                                 keyboardOptions = KeyboardOptions(keyboardType = KeyboardType.Number)
                             )
                             Text("計算式：走行距離 ÷ 燃費 × 単価")
-                            calculatedGasAmount()?.let { Text("計算結果：${it}円") }
+                            calculatedGasAmount()?.let { Text("計算結果：${FormatUtils.yen(it)}") }
                         }
 
                         PayerPicker(
-                            members = event.members,
+                            members = members,
                             selectedMemberId = payerId,
                             onSelected = { payerId = it }
                         )
 
                         Text("立替対象メンバー")
-                        event.members.forEach { member ->
+                        members.forEach { member ->
                             Row(verticalAlignment = Alignment.CenterVertically) {
                                 Checkbox(
                                     checked = member.id in targetMemberIds,
@@ -252,7 +332,7 @@ fun EventEditScreen(
 
                         Row(horizontalArrangement = Arrangement.spacedBy(8.dp)) {
                             Button(
-                                enabled = event.members.isNotEmpty(),
+                                enabled = members.isNotEmpty(),
                                 onClick = {
                                     val title = expenseTitle.trim()
                                     val gasAmount = if (useGasCalculator) calculatedGasAmount() else null
@@ -268,19 +348,29 @@ fun EventEditScreen(
                                     }
                                     if (title.isNotEmpty() && amount > 0 && payerId.isNotBlank() && targetMemberIds.isNotEmpty()) {
                                         val expense = Expense(
-                                            id = editingExpenseId ?: UUID.randomUUID().toString(),
+                                            id = editingExpenseId ?: java.util.UUID.randomUUID().toString(),
                                             title = title,
                                             amount = amount,
                                             payerId = payerId,
                                             targetMemberIds = targetMemberIds,
                                             gasInfo = gasInfo
                                         )
-                                        val newExpenses = if (editingExpenseId == null) {
-                                            event.expenses + expense
+                                        //val newExpenses = if (editingExpenseId == null) {
+                                        //    event.expenses + expense
+                                        //} else {
+                                        //    event.expenses.map { if (it.id == editingExpenseId) expense else it }
+                                        //}
+                                        //onEventChange(event.copy(expenses = newExpenses))
+                                        if (editingExpenseId == null) {
+                                            expenses.add(expense)
                                         } else {
-                                            event.expenses.map { if (it.id == editingExpenseId) expense else it }
+                                            val index = expenses.indexOfFirst {
+                                                it.id == editingExpenseId
+                                            }
+                                            if (index >= 0) {
+                                                expenses[index] = expense
+                                            }
                                         }
-                                        onEventChange(event.copy(expenses = newExpenses))
                                         resetExpenseForm()
                                     }
                                 }
@@ -298,9 +388,9 @@ fun EventEditScreen(
             }
 
             item { Text("支払項目一覧") }
-            items(event.expenses) { expense ->
-                val payerName = event.members.firstOrNull { it.id == expense.payerId }?.name ?: "不明"
-                val targetNames = event.members
+            items(expenses) { expense ->
+                val payerName = members.firstOrNull { it.id == expense.payerId }?.name ?: "不明"
+                val targetNames = members
                     .filter { it.id in expense.targetMemberIds }
                     .joinToString("、") { it.name }
                 Card(modifier = Modifier.fillMaxWidth()) {
@@ -308,7 +398,7 @@ fun EventEditScreen(
                         modifier = Modifier.padding(12.dp),
                         verticalArrangement = Arrangement.spacedBy(4.dp)
                     ) {
-                        Text("${expense.title}：${expense.amount}円")
+                        Text("${expense.title}：${FormatUtils.yen(expense.amount)}")
                         expense.gasInfo?.let { gas ->
                             Text("ガス代：${gas.distanceKm}km ÷ ${gas.fuelEfficiencyKmPerLiter}km/L × ${gas.gasPricePerLiter}円/L")
                         }
@@ -329,7 +419,8 @@ fun EventEditScreen(
                                 Text("修正")
                             }
                             TextButton(onClick = {
-                                onEventChange(event.copy(expenses = event.expenses.filterNot { it.id == expense.id }))
+                                //onEventChange(event.copy(expenses = event.expenses.filterNot { it.id == expense.id }))
+                                expenses.removeAll { it.id == expense.id }
                                 if (editingExpenseId == expense.id) resetExpenseForm()
                             }) {
                                 Text("削除")
@@ -341,17 +432,67 @@ fun EventEditScreen(
 
             item {
                 Row(horizontalArrangement = Arrangement.spacedBy(8.dp)) {
-                    OutlinedButton(onClick = onBack) { Text("戻る") }
-                    Button(onClick = onSave) { Text("保存") }
+                    OutlinedButton(onClick = {handleBack()} ) { Text("戻る") }
+                    Button(onClick = { saveEvent() }) { Text("保存") }
                     Button(
-                        enabled = event.members.isNotEmpty() && event.expenses.isNotEmpty(),
-                        onClick = onShowSettlement
+                        enabled = members.isNotEmpty() && expenses.isNotEmpty(),
+                        //onClick = onShowSettlement
+                        onClick = { onSaveAndShowSettlement(buildCurrentEvent()) }
                     ) {
                         Text("精算結果を見る")
                     }
                 }
             }
         }
+    }
+
+    if (showUnsavedDialog) {
+        AlertDialog(
+            onDismissRequest = {
+                showUnsavedDialog = false
+            },
+            title = {
+                Text("未保存の変更があります")
+            },
+            text = {
+                Column {
+                    Text("保存してから戻りますか？")
+
+                    Spacer(Modifier.height(16.dp))
+
+                    Button(
+                        onClick = {
+                            saveEvent()
+                            showUnsavedDialog = false
+                            onBack()
+                        },
+                        modifier = Modifier.fillMaxWidth()
+                    ) {
+                        Text("保存して戻る")
+                    }
+
+                    TextButton(
+                        onClick = {
+                            showUnsavedDialog = false
+                            onBack()
+                        },
+                        modifier = Modifier.fillMaxWidth()
+                    ) {
+                        Text("破棄して戻る")
+                    }
+
+                    TextButton(
+                        onClick = {
+                            showUnsavedDialog = false
+                        },
+                        modifier = Modifier.fillMaxWidth()
+                    ) {
+                        Text("キャンセル")
+                    }
+                }
+            },
+            confirmButton = {}
+        )
     }
 }
 

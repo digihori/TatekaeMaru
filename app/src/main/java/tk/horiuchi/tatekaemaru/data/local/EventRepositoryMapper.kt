@@ -8,28 +8,28 @@ import java.time.LocalDate
 
 object EventRepositoryMapper {
     data class EntitySet(
-        val event: EventEntity,
-        val members: List<MemberEntity>,
-        val expenses: List<ExpenseEntity>,
-        val targets: List<ExpenseTargetEntity>
+        val event: tk.horiuchi.tatekaemaru.data.local.EventEntity,
+        val members: List<tk.horiuchi.tatekaemaru.data.local.MemberEntity>,
+        val expenses: List<tk.horiuchi.tatekaemaru.data.local.ExpenseEntity>,
+        val targets: List<tk.horiuchi.tatekaemaru.data.local.ExpenseTargetEntity>
     )
 
     fun toEntities(event: Event): EntitySet {
-        val eventEntity = EventEntity(
+        val eventEntity = tk.horiuchi.tatekaemaru.data.local.EventEntity(
             id = event.id,
             name = event.name,
             date = event.date.toString(),
             updatedAt = System.currentTimeMillis()
         )
         val memberEntities = event.members.map { member ->
-            MemberEntity(
+            tk.horiuchi.tatekaemaru.data.local.MemberEntity(
                 id = member.id,
                 eventId = event.id,
                 name = member.name
             )
         }
         val expenseEntities = event.expenses.map { expense ->
-            ExpenseEntity(
+            tk.horiuchi.tatekaemaru.data.local.ExpenseEntity(
                 id = expense.id,
                 eventId = event.id,
                 title = expense.title,
@@ -42,17 +42,20 @@ object EventRepositoryMapper {
         }
         val targetEntities = event.expenses.flatMap { expense ->
             expense.targetMemberIds.map { memberId ->
-                ExpenseTargetEntity(expenseId = expense.id, memberId = memberId)
+                tk.horiuchi.tatekaemaru.data.local.ExpenseTargetEntity(
+                    expenseId = expense.id,
+                    memberId = memberId
+                )
             }
         }
         return EntitySet(eventEntity, memberEntities, expenseEntities, targetEntities)
     }
 
     fun toModel(
-        event: EventEntity,
-        members: List<MemberEntity>,
-        expenses: List<ExpenseEntity>,
-        targets: List<ExpenseTargetEntity>
+        event: tk.horiuchi.tatekaemaru.data.local.EventEntity,
+        members: List<tk.horiuchi.tatekaemaru.data.local.MemberEntity>,
+        expenses: List<tk.horiuchi.tatekaemaru.data.local.ExpenseEntity>,
+        targets: List<tk.horiuchi.tatekaemaru.data.local.ExpenseTargetEntity>
     ): Event {
         val targetsByExpense = targets.groupBy { it.expenseId }
         return Event(

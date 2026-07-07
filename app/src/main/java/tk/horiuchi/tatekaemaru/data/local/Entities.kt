@@ -17,7 +17,7 @@ data class EventEntity(
     tableName = "members",
     foreignKeys = [
         ForeignKey(
-            entity = EventEntity::class,
+            entity = tk.horiuchi.tatekaemaru.data.local.EventEntity::class,
             parentColumns = ["id"],
             childColumns = ["eventId"],
             onDelete = ForeignKey.CASCADE
@@ -35,7 +35,7 @@ data class MemberEntity(
     tableName = "expenses",
     foreignKeys = [
         ForeignKey(
-            entity = EventEntity::class,
+            entity = tk.horiuchi.tatekaemaru.data.local.EventEntity::class,
             parentColumns = ["id"],
             childColumns = ["eventId"],
             onDelete = ForeignKey.CASCADE
@@ -59,13 +59,13 @@ data class ExpenseEntity(
     primaryKeys = ["expenseId", "memberId"],
     foreignKeys = [
         ForeignKey(
-            entity = ExpenseEntity::class,
+            entity = tk.horiuchi.tatekaemaru.data.local.ExpenseEntity::class,
             parentColumns = ["id"],
             childColumns = ["expenseId"],
             onDelete = ForeignKey.CASCADE
         ),
         ForeignKey(
-            entity = MemberEntity::class,
+            entity = tk.horiuchi.tatekaemaru.data.local.MemberEntity::class,
             parentColumns = ["id"],
             childColumns = ["memberId"],
             onDelete = ForeignKey.CASCADE
