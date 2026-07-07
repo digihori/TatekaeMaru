@@ -10,31 +10,31 @@ import kotlinx.coroutines.flow.Flow
 @Dao
 abstract class TatekaeDao {
     @Query("SELECT * FROM events ORDER BY updatedAt DESC")
-    abstract fun observeEvents(): Flow<List<EventEntity>>
+    abstract fun observeEvents(): Flow<List<tk.horiuchi.tatekaemaru.data.local.EventEntity>>
 
     @Query("SELECT * FROM events WHERE id = :eventId LIMIT 1")
-    abstract suspend fun getEvent(eventId: String): EventEntity?
+    abstract suspend fun getEvent(eventId: String): tk.horiuchi.tatekaemaru.data.local.EventEntity?
 
     @Query("SELECT * FROM members WHERE eventId = :eventId ORDER BY rowid")
-    abstract suspend fun getMembers(eventId: String): List<MemberEntity>
+    abstract suspend fun getMembers(eventId: String): List<tk.horiuchi.tatekaemaru.data.local.MemberEntity>
 
     @Query("SELECT * FROM expenses WHERE eventId = :eventId ORDER BY rowid")
-    abstract suspend fun getExpenses(eventId: String): List<ExpenseEntity>
+    abstract suspend fun getExpenses(eventId: String): List<tk.horiuchi.tatekaemaru.data.local.ExpenseEntity>
 
     @Query("SELECT * FROM expense_targets WHERE expenseId IN (:expenseIds)")
-    abstract suspend fun getTargets(expenseIds: List<String>): List<ExpenseTargetEntity>
+    abstract suspend fun getTargets(expenseIds: List<String>): List<tk.horiuchi.tatekaemaru.data.local.ExpenseTargetEntity>
 
     @Insert(onConflict = OnConflictStrategy.REPLACE)
-    abstract suspend fun upsertEvent(event: EventEntity)
+    abstract suspend fun upsertEvent(event: tk.horiuchi.tatekaemaru.data.local.EventEntity)
 
     @Insert(onConflict = OnConflictStrategy.REPLACE)
-    abstract suspend fun insertMembers(members: List<MemberEntity>)
+    abstract suspend fun insertMembers(members: List<tk.horiuchi.tatekaemaru.data.local.MemberEntity>)
 
     @Insert(onConflict = OnConflictStrategy.REPLACE)
-    abstract suspend fun insertExpenses(expenses: List<ExpenseEntity>)
+    abstract suspend fun insertExpenses(expenses: List<tk.horiuchi.tatekaemaru.data.local.ExpenseEntity>)
 
     @Insert(onConflict = OnConflictStrategy.REPLACE)
-    abstract suspend fun insertTargets(targets: List<ExpenseTargetEntity>)
+    abstract suspend fun insertTargets(targets: List<tk.horiuchi.tatekaemaru.data.local.ExpenseTargetEntity>)
 
     @Query("DELETE FROM members WHERE eventId = :eventId")
     abstract suspend fun deleteMembersForEvent(eventId: String)
@@ -47,10 +47,10 @@ abstract class TatekaeDao {
 
     @Transaction
     open suspend fun replaceEvent(
-        event: EventEntity,
-        members: List<MemberEntity>,
-        expenses: List<ExpenseEntity>,
-        targets: List<ExpenseTargetEntity>
+        event: tk.horiuchi.tatekaemaru.data.local.EventEntity,
+        members: List<tk.horiuchi.tatekaemaru.data.local.MemberEntity>,
+        expenses: List<tk.horiuchi.tatekaemaru.data.local.ExpenseEntity>,
+        targets: List<tk.horiuchi.tatekaemaru.data.local.ExpenseTargetEntity>
     ) {
         upsertEvent(event)
         deleteMembersForEvent(event.id)

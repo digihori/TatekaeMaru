@@ -4,7 +4,6 @@ import tk.horiuchi.tatekaemaru.data.Event
 import tk.horiuchi.tatekaemaru.data.MemberBalance
 import tk.horiuchi.tatekaemaru.data.SettlementResult
 import tk.horiuchi.tatekaemaru.data.SettlementTransfer
-import kotlin.math.min
 
 object SettlementCalculator {
     fun calculate(event: Event): SettlementResult {
@@ -39,36 +38,78 @@ object SettlementCalculator {
             )
         }
 
-        val debtors = balances
-            .filter { it.balance < 0 }
-            .map { it.memberId to -it.balance }
+        return SettlementResult(
+            balances = balances,
+            transfers = minimizeTransfers(balances)
+        )
+    }
+
+    /**
+     * 送金回数が最小になる組み合わせを探索する。
+     * メンバー数はレジャー用途では少人数想定なので、バックトラックで厳密に最小化する。
+     */
+    private fun minimizeTransfers(balances: List<MemberBalance>): List<SettlementTransfer> {
+        val entries = balances
+            .filter { it.balance != 0 }
+            .map { BalanceWork(it.memberId, it.balance) }
             .toMutableList()
 
-        val creditors = balances
-            .filter { it.balance > 0 }
-            .map { it.memberId to it.balance }
-            .toMutableList()
+        if (entries.isEmpty()) return emptyList()
 
-        val transfers = mutableListOf<SettlementTransfer>()
-        var d = 0
-        var c = 0
-        while (d < debtors.size && c < creditors.size) {
-            val debtor = debtors[d]
-            val creditor = creditors[c]
-            val amount = min(debtor.second, creditor.second)
-            if (amount > 0) {
-                transfers += SettlementTransfer(
-                    fromMemberId = debtor.first,
-                    toMemberId = creditor.first,
-                    amount = amount
-                )
+        var bestTransfers: List<SettlementTransfer>? = null
+
+        fun search(startIndex: Int, currentTransfers: MutableList<SettlementTransfer>) {
+            if (bestTransfers != null && currentTransfers.size >= bestTransfers!!.size) return
+
+            var i = startIndex
+            while (i < entries.size && entries[i].balance == 0) i++
+            if (i == entries.size) {
+                bestTransfers = currentTransfers.toList()
+                return
             }
-            debtors[d] = debtor.first to (debtor.second - amount)
-            creditors[c] = creditor.first to (creditor.second - amount)
-            if (debtors[d].second == 0) d++
-            if (creditors[c].second == 0) c++
+
+            val seenBalances = mutableSetOf<Int>()
+            for (j in i + 1 until entries.size) {
+                if (entries[i].balance * entries[j].balance >= 0) continue
+                if (!seenBalances.add(entries[j].balance)) continue
+
+                val originalI = entries[i].balance
+                val originalJ = entries[j].balance
+
+                val transfer = if (originalI < 0) {
+                    SettlementTransfer(
+                        fromMemberId = entries[i].memberId,
+                        toMemberId = entries[j].memberId,
+                        amount = minOf(-originalI, originalJ)
+                    )
+                } else {
+                    SettlementTransfer(
+                        fromMemberId = entries[j].memberId,
+                        toMemberId = entries[i].memberId,
+                        amount = minOf(originalI, -originalJ)
+                    )
+                }
+
+                entries[j].balance = originalI + originalJ
+                entries[i].balance = 0
+                currentTransfers += transfer
+
+                search(i + 1, currentTransfers)
+
+                currentTransfers.removeAt(currentTransfers.lastIndex)
+                entries[i].balance = originalI
+                entries[j].balance = originalJ
+
+                if (originalI + originalJ == 0) break
+            }
         }
 
-        return SettlementResult(balances = balances, transfers = transfers)
+        search(0, mutableListOf())
+        return bestTransfers.orEmpty()
     }
+
+    private data class BalanceWork(
+        val memberId: String,
+        var balance: Int
+    )
 }

@@ -38,13 +38,15 @@ fun TatekaeMaruApp() {
     val scope = rememberCoroutineScope()
     val navController = rememberNavController()
     var currentEvent by remember { mutableStateOf(SampleRepository.sampleEvent) }
+    val preferences = remember { context.getSharedPreferences("tatekae_maru_settings", android.content.Context.MODE_PRIVATE) }
+    var showSampleEvent by remember { mutableStateOf(preferences.getBoolean("show_sample_event", true)) }
 
     NavHost(navController = navController, startDestination = Routes.Home) {
         composable(Routes.Home) {
             HomeScreen(
                 events = savedEvents,
                 onCreateEvent = {
-                    currentEvent = Event(name = "釣り2026/07/05")
+                    currentEvent = Event(name = "")
                     navController.navigate(Routes.EventEdit)
                 },
                 onOpenEvent = { eventId ->
@@ -58,9 +60,14 @@ fun TatekaeMaruApp() {
                 onDeleteEvent = { eventId ->
                     scope.launch { repository.deleteEvent(eventId) }
                 },
+                showSampleEvent = showSampleEvent,
                 onOpenSampleEvent = {
                     currentEvent = SampleRepository.sampleEvent
                     navController.navigate(Routes.EventEdit)
+                },
+                onDeleteSampleEvent = {
+                    showSampleEvent = false
+                    preferences.edit().putBoolean("show_sample_event", false).apply()
                 },
                 onOpenPrivacyPolicy = { navController.navigate(Routes.PrivacyPolicy) }
             )
@@ -70,10 +77,18 @@ fun TatekaeMaruApp() {
                 event = currentEvent,
                 onEventChange = { currentEvent = it },
                 onBack = { navController.popBackStack() },
-                onSave = {
+                onSave = { eventToSave ->
                     scope.launch {
-                        repository.saveEvent(currentEvent)
+                        currentEvent = eventToSave
+                        repository.saveEvent(eventToSave)
                         navController.popBackStack(Routes.Home, inclusive = false)
+                    }
+                },
+                onSaveAndShowSettlement = { eventToSave ->
+                    scope.launch {
+                        currentEvent = eventToSave
+                        repository.saveEvent(eventToSave)
+                        navController.navigate(Routes.Settlement)
                     }
                 },
                 onShowSettlement = { navController.navigate(Routes.Settlement) }

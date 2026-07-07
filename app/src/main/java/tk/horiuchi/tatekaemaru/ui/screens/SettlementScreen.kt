@@ -16,7 +16,16 @@ import androidx.compose.ui.platform.LocalContext
 import androidx.compose.ui.unit.dp
 import tk.horiuchi.tatekaemaru.data.Event
 import tk.horiuchi.tatekaemaru.domain.SettlementCalculator
+import tk.horiuchi.tatekaemaru.ui.FormatUtils
 import tk.horiuchi.tatekaemaru.ui.ShareUtils
+import androidx.compose.material.icons.Icons
+import androidx.compose.material.icons.automirrored.filled.ArrowBack
+import androidx.compose.material3.Icon
+import androidx.compose.material3.IconButton
+import androidx.compose.material3.Scaffold
+import androidx.compose.material3.TopAppBar
+import androidx.compose.material3.TopAppBarDefaults
+import androidx.compose.ui.graphics.Color
 
 @OptIn(ExperimentalMaterial3Api::class)
 @Composable
@@ -35,9 +44,9 @@ fun SettlementScreen(
         appendLine()
         appendLine("支払明細：")
         event.expenses.forEach { expense ->
-            appendLine("${memberName(expense.payerId)}：${expense.title} ${expense.amount}円")
+            appendLine("${memberName(expense.payerId)}：${expense.title} ${FormatUtils.yen(expense.amount)}")
             expense.gasInfo?.let { gas ->
-                appendLine("  ガス代計算：${gas.distanceKm}km ÷ ${gas.fuelEfficiencyKmPerLiter}km/L × ${gas.gasPricePerLiter}円/L")
+                appendLine("  ガス代計算：${gas.distanceKm}km ÷ ${gas.fuelEfficiencyKmPerLiter}km/L × ${FormatUtils.yen(gas.gasPricePerLiter)}/L")
             }
         }
         appendLine()
@@ -46,13 +55,35 @@ fun SettlementScreen(
             appendLine("精算はありません")
         } else {
             result.transfers.forEach { transfer ->
-                appendLine("${memberName(transfer.fromMemberId)} → ${memberName(transfer.toMemberId)}：${transfer.amount}円")
+                appendLine("${memberName(transfer.fromMemberId)} → ${memberName(transfer.toMemberId)}：${FormatUtils.yen(transfer.amount)}")
             }
         }
     }
 
     Scaffold(
-        topBar = { TopAppBar(title = { Text("精算結果") }) }
+        //topBar = { TopAppBar(title = { Text("精算結果") }) }
+        topBar = {
+            TopAppBar(
+                title = {
+                    Text("精算結果")
+                },
+                navigationIcon = {
+                    IconButton(
+                        onClick = onBack
+                    ) {
+                        Icon(
+                            imageVector = Icons.AutoMirrored.Filled.ArrowBack,
+                            contentDescription = "戻る"
+                        )
+                    }
+                },
+                colors = TopAppBarDefaults.topAppBarColors(
+                    containerColor = Color(0xFF1976D2),
+                    titleContentColor = Color.White,
+                    navigationIconContentColor = Color.White
+                )
+            )
+        }
     ) { padding ->
         Column(
             modifier = Modifier
@@ -63,7 +94,7 @@ fun SettlementScreen(
         ) {
             Text("メンバー別")
             result.balances.forEach { balance ->
-                Text("${memberName(balance.memberId)}：支払 ${balance.paid}円 / 負担 ${balance.shouldPay}円 / 差額 ${balance.balance}円")
+                Text("${memberName(balance.memberId)}：支払 ${FormatUtils.yen(balance.paid)} / 負担 ${FormatUtils.yen(balance.shouldPay)} / 差額 ${FormatUtils.yen(balance.balance)}")
             }
 
             Text("精算")
@@ -71,7 +102,7 @@ fun SettlementScreen(
                 Text("精算はありません")
             } else {
                 result.transfers.forEach { transfer ->
-                    Text("${memberName(transfer.fromMemberId)} → ${memberName(transfer.toMemberId)}：${transfer.amount}円")
+                    Text("${memberName(transfer.fromMemberId)} → ${memberName(transfer.toMemberId)}：${FormatUtils.yen(transfer.amount)}")
                 }
             }
 

@@ -7,5 +7,5 @@ package tk.horiuchi.tatekaemaru.ui
  * https://raw.githubusercontent.com/<ユーザー名>/<リポジトリ名>/main/PRIVACY_POLICY.md
  */
 object PrivacyPolicyConfig {
-    const val Url = "https://raw.githubusercontent.com/digihori/TatekaeMaru/main/PRIVACY_POLICY.md"
+    const val Url = "https://raw.githubusercontent.com/digihori/TatekaeMaru/main/PRIVACY.ja.md"
 }
