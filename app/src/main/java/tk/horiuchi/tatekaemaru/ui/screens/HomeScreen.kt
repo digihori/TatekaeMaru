@@ -35,7 +35,8 @@ import androidx.compose.ui.Alignment
 import androidx.compose.ui.Modifier
 import androidx.compose.ui.graphics.Color
 import androidx.compose.ui.unit.dp
-import tk.horiuchi.tatekaemaru.data.local.EventEntity
+import androidx.compose.material3.AlertDialog
+import tk.horiuchi.tatekaemaru.BuildConfig
 
 @OptIn(ExperimentalMaterial3Api::class)
 @Composable
@@ -50,6 +51,7 @@ fun HomeScreen(
     onOpenPrivacyPolicy: () -> Unit
 ) {
     var menuExpanded by remember { mutableStateOf(false) }
+    var showAboutDialog by remember { mutableStateOf(false) }
 
     Scaffold(
         topBar = {
@@ -84,6 +86,13 @@ fun HomeScreen(
                             onClick = {
                                 menuExpanded = false
                                 onOpenPrivacyPolicy()
+                            }
+                        )
+                        DropdownMenuItem(
+                            text = { Text("バージョン情報") },
+                            onClick = {
+                                menuExpanded = false
+                                showAboutDialog = true
                             }
                         )
                     }
@@ -169,6 +178,30 @@ fun HomeScreen(
                     }
                 }
             }
+        }
+        if (showAboutDialog) {
+            AlertDialog(
+                onDismissRequest = {
+                    showAboutDialog = false
+                },
+                title = {
+                    Text("たてかえ丸")
+                },
+                text = {
+                    Text(
+                        "Version ${BuildConfig.VERSION_NAME}\n\n© デジホリ工房"
+                    )
+                },
+                confirmButton = {
+                    TextButton(
+                        onClick = {
+                            showAboutDialog = false
+                        }
+                    ) {
+                        Text("OK")
+                    }
+                }
+            )
         }
     }
 }

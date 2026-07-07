@@ -47,6 +47,10 @@ import androidx.compose.foundation.layout.Spacer
 import androidx.compose.foundation.layout.height
 import androidx.compose.runtime.mutableStateListOf
 import androidx.compose.foundation.lazy.items
+import androidx.compose.foundation.lazy.rememberLazyListState
+import androidx.compose.material3.MaterialTheme
+import androidx.compose.runtime.rememberCoroutineScope
+import kotlinx.coroutines.launch
 
 @OptIn(ExperimentalMaterial3Api::class)
 @Composable
@@ -72,6 +76,9 @@ fun EventEditScreen(
     var eventName by remember { mutableStateOf(event.name) }
     val members = remember { mutableStateListOf(*event.members.toTypedArray()) }
     val expenses = remember { mutableStateListOf(*event.expenses.toTypedArray()) }
+    val listState = rememberLazyListState()
+    val coroutineScope = rememberCoroutineScope()
+
 
     fun buildCurrentEvent(): Event {
         return Event(
@@ -109,10 +116,10 @@ fun EventEditScreen(
     }
 
     fun resetExpenseForm() {
-        expenseTitle = ""
+        //expenseTitle = ""
         expenseAmount = ""
-        payerId = event.members.firstOrNull()?.id.orEmpty()
-        targetMemberIds = event.members.map { it.id }.toSet()
+        //payerId = members.firstOrNull()?.id.orEmpty()
+        //targetMemberIds = members.map { it.id }.toSet()
         editingExpenseId = null
         useGasCalculator = false
         distanceKm = ""
@@ -143,6 +150,7 @@ fun EventEditScreen(
             ) }
     ) { padding ->
         LazyColumn(
+            state = listState,
             modifier = Modifier
                 .padding(padding)
                 .padding(16.dp)
@@ -241,6 +249,20 @@ fun EventEditScreen(
                         verticalArrangement = Arrangement.spacedBy(8.dp)
                     ) {
                         Text(if (editingExpenseId == null) "支払項目を追加" else "支払項目を修正")
+                        Card(
+                            modifier = Modifier.fillMaxWidth()
+                        ) {
+                            Column (
+                                modifier = Modifier
+                                    .fillMaxWidth()
+                                    .padding(12.dp),
+                                verticalArrangement = Arrangement.SpaceBetween
+                            ) {
+                                Text("参加人数：${members.size}人")
+                                Text("支払項目：${expenses.size}件")
+                                Text("入力済み合計：${FormatUtils.yen(expenses.sumOf { it.amount })}")
+                            }
+                        }
                         OutlinedTextField(
                             value = expenseTitle,
                             onValueChange = { expenseTitle = it },
@@ -355,12 +377,6 @@ fun EventEditScreen(
                                             targetMemberIds = targetMemberIds,
                                             gasInfo = gasInfo
                                         )
-                                        //val newExpenses = if (editingExpenseId == null) {
-                                        //    event.expenses + expense
-                                        //} else {
-                                        //    event.expenses.map { if (it.id == editingExpenseId) expense else it }
-                                        //}
-                                        //onEventChange(event.copy(expenses = newExpenses))
                                         if (editingExpenseId == null) {
                                             expenses.add(expense)
                                         } else {
@@ -415,6 +431,9 @@ fun EventEditScreen(
                                 distanceKm = expense.gasInfo?.distanceKm?.toString().orEmpty()
                                 fuelEfficiency = expense.gasInfo?.fuelEfficiencyKmPerLiter?.toString().orEmpty()
                                 gasPrice = expense.gasInfo?.gasPricePerLiter?.toString().orEmpty()
+                                coroutineScope.launch {
+                                    listState.animateScrollToItem(2)
+                                }
                             }) {
                                 Text("修正")
                             }
