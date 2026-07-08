@@ -2,6 +2,7 @@ package tk.horiuchi.tatekaemaru.ui.screens
 
 import androidx.compose.foundation.layout.Arrangement
 import androidx.compose.foundation.layout.Column
+import androidx.compose.foundation.layout.Row
 import androidx.compose.foundation.layout.fillMaxSize
 import androidx.compose.foundation.layout.fillMaxWidth
 import androidx.compose.foundation.layout.padding
@@ -133,6 +134,39 @@ fun SettlementScreen(
                     navigationIconContentColor = Color.White
                 )
             )
+        },
+        bottomBar = {
+            Row(
+                modifier = Modifier
+                    .fillMaxWidth()
+                    .padding(12.dp),
+                horizontalArrangement = Arrangement.spacedBy(8.dp)
+            ) {
+                OutlinedButton(
+                    onClick = { onBack() },
+                    modifier = Modifier.weight(1f)
+                ) {
+                    Text("戻る")
+                }
+
+                Button(
+                    onClick = {
+                        ShareUtils.shareTextToLine(context, shareText)
+                    },
+                    modifier = Modifier.weight(1f)
+                ) {
+                    Text("LINE")
+                }
+
+                OutlinedButton(
+                    onClick = {
+                        ShareUtils.shareText(context, shareText, "精算結果を共有")
+                    },
+                    modifier = Modifier.weight(1f)
+                ) {
+                    Text("共有")
+                }
+            }
         }
     ) { padding ->
         Column(
@@ -189,20 +223,6 @@ fun SettlementScreen(
                     }
                 }
             }
-
-            Button(onClick = {
-                ShareUtils.shareTextToLine(context, shareText)
-            }) {
-                Text("LINEへ共有")
-            }
-
-            OutlinedButton(onClick = {
-                ShareUtils.shareText(context, shareText, "精算結果を共有")
-            }) {
-                Text("ほかのアプリへ共有")
-            }
-
-            OutlinedButton(onClick = onBack) { Text("戻る") }
         }
     }
 }

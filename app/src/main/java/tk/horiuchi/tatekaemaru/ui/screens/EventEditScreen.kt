@@ -147,7 +147,52 @@ fun EventEditScreen(
                     titleContentColor = Color.White,
                     navigationIconContentColor = Color.White
                 )
-            ) }
+            )
+        },
+        bottomBar = {
+            Column(
+                modifier = Modifier
+                    .fillMaxWidth()
+                    .padding(horizontal = 12.dp, vertical = 2.dp),
+                verticalArrangement = Arrangement.spacedBy(2.dp)
+            ) {
+                Text(
+                    text = "入力済み：${expenses.size}件 / 合計 ${FormatUtils.yen(expenses.sumOf { it.amount })}",
+                    style = MaterialTheme.typography.titleMedium
+                )
+
+                Row(
+                    modifier = Modifier
+                        .fillMaxWidth()
+                        .padding(12.dp),
+                    horizontalArrangement = Arrangement.spacedBy(8.dp)
+                ) {
+                    OutlinedButton(
+                        onClick = { handleBack() },
+                        modifier = Modifier.weight(1f)
+                    ) {
+                        Text("戻る")
+                    }
+
+                    Button(
+                        onClick = { saveEvent() },
+                        modifier = Modifier.weight(1f)
+                    ) {
+                        Text("保存")
+                    }
+
+                    Button(
+                        enabled = members.isNotEmpty() && expenses.isNotEmpty(),
+                        onClick = {
+                            onSaveAndShowSettlement(buildCurrentEvent())
+                        },
+                        modifier = Modifier.weight(1.4f)
+                    ) {
+                        Text("精算結果")
+                    }
+                }
+            }
+        }
     ) { padding ->
         LazyColumn(
             state = listState,
@@ -445,20 +490,6 @@ fun EventEditScreen(
                                 Text("削除")
                             }
                         }
-                    }
-                }
-            }
-
-            item {
-                Row(horizontalArrangement = Arrangement.spacedBy(8.dp)) {
-                    OutlinedButton(onClick = {handleBack()} ) { Text("戻る") }
-                    Button(onClick = { saveEvent() }) { Text("保存") }
-                    Button(
-                        enabled = members.isNotEmpty() && expenses.isNotEmpty(),
-                        //onClick = onShowSettlement
-                        onClick = { onSaveAndShowSettlement(buildCurrentEvent()) }
-                    ) {
-                        Text("精算結果を見る")
                     }
                 }
             }
