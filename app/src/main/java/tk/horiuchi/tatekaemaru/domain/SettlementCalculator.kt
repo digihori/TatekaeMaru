@@ -15,14 +15,21 @@ object SettlementCalculator {
             event.members.forEach { put(it.id, 0) }
         }
 
-        event.expenses.forEach { expense ->
-            val targets = expense.targetMemberIds.toList()
-            if (targets.isEmpty()) return@forEach
+        val groupedExpenses = event.expenses
+            .filter { it.targetMemberIds.isNotEmpty() }
+            .groupBy { expense ->
+                expense.targetMemberIds.sorted()
+            }
 
-            val base = expense.amount / targets.size
-            val remainder = expense.amount % targets.size
+        groupedExpenses.forEach { (targets, expenses) ->
+            val totalAmount = expenses.sumOf { it.amount }
+
+            val base = totalAmount / targets.size
+            val remainder = totalAmount % targets.size
+
             targets.forEachIndexed { index, memberId ->
                 val share = base + if (index < remainder) 1 else 0
+
                 shouldPayByMember[memberId] = shouldPayByMember.getValue(memberId) + share
             }
         }
@@ -44,72 +51,74 @@ object SettlementCalculator {
         )
     }
 
-    /**
-     * 送金回数が最小になる組み合わせを探索する。
-     * メンバー数はレジャー用途では少人数想定なので、バックトラックで厳密に最小化する。
-     */
-    private fun minimizeTransfers(balances: List<MemberBalance>): List<SettlementTransfer> {
-        val entries = balances
-            .filter { it.balance != 0 }
-            .map { BalanceWork(it.memberId, it.balance) }
+    private fun minimizeTransfers(
+        balances: List<MemberBalance>
+    ): List<SettlementTransfer> {
+
+        data class WorkBalance(
+            val memberId: String,
+            var amount: Int
+        )
+
+        // 受け取る側
+        val creditors = balances
+            .filter { it.balance > 0 }
+            .map {
+                WorkBalance(
+                    memberId = it.memberId,
+                    amount = it.balance
+                )
+            }
             .toMutableList()
 
-        if (entries.isEmpty()) return emptyList()
+        // 支払う側
+        val debtors = balances
+            .filter { it.balance < 0 }
+            .map {
+                WorkBalance(
+                    memberId = it.memberId,
+                    amount = -it.balance
+                )
+            }
+            .toMutableList()
 
-        var bestTransfers: List<SettlementTransfer>? = null
+        val transfers = mutableListOf<SettlementTransfer>()
 
-        fun search(startIndex: Int, currentTransfers: MutableList<SettlementTransfer>) {
-            if (bestTransfers != null && currentTransfers.size >= bestTransfers!!.size) return
+        var debtorIndex = 0
+        var creditorIndex = 0
 
-            var i = startIndex
-            while (i < entries.size && entries[i].balance == 0) i++
-            if (i == entries.size) {
-                bestTransfers = currentTransfers.toList()
-                return
+        while (
+            debtorIndex < debtors.size &&
+            creditorIndex < creditors.size
+        ) {
+            val debtor = debtors[debtorIndex]
+            val creditor = creditors[creditorIndex]
+
+            val amount = minOf(
+                debtor.amount,
+                creditor.amount
+            )
+
+            if (amount > 0) {
+                transfers += SettlementTransfer(
+                    fromMemberId = debtor.memberId,
+                    toMemberId = creditor.memberId,
+                    amount = amount
+                )
+
+                debtor.amount -= amount
+                creditor.amount -= amount
             }
 
-            val seenBalances = mutableSetOf<Int>()
-            for (j in i + 1 until entries.size) {
-                if (entries[i].balance * entries[j].balance >= 0) continue
-                if (!seenBalances.add(entries[j].balance)) continue
+            if (debtor.amount == 0) {
+                debtorIndex++
+            }
 
-                val originalI = entries[i].balance
-                val originalJ = entries[j].balance
-
-                val transfer = if (originalI < 0) {
-                    SettlementTransfer(
-                        fromMemberId = entries[i].memberId,
-                        toMemberId = entries[j].memberId,
-                        amount = minOf(-originalI, originalJ)
-                    )
-                } else {
-                    SettlementTransfer(
-                        fromMemberId = entries[j].memberId,
-                        toMemberId = entries[i].memberId,
-                        amount = minOf(originalI, -originalJ)
-                    )
-                }
-
-                entries[j].balance = originalI + originalJ
-                entries[i].balance = 0
-                currentTransfers += transfer
-
-                search(i + 1, currentTransfers)
-
-                currentTransfers.removeAt(currentTransfers.lastIndex)
-                entries[i].balance = originalI
-                entries[j].balance = originalJ
-
-                if (originalI + originalJ == 0) break
+            if (creditor.amount == 0) {
+                creditorIndex++
             }
         }
 
-        search(0, mutableListOf())
-        return bestTransfers.orEmpty()
+        return transfers
     }
-
-    private data class BalanceWork(
-        val memberId: String,
-        var balance: Int
-    )
 }

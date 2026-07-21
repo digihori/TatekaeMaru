@@ -52,6 +52,7 @@ fun HomeScreen(
 ) {
     var menuExpanded by remember { mutableStateOf(false) }
     var showAboutDialog by remember { mutableStateOf(false) }
+    var eventToDelete by remember { mutableStateOf<tk.horiuchi.tatekaemaru.data.local.EventEntity?>(null) }
 
     Scaffold(
         topBar = {
@@ -145,7 +146,12 @@ fun HomeScreen(
                                 OutlinedButton(onClick = { onOpenEvent(event.id) }) {
                                     Text("開く")
                                 }
-                                TextButton(onClick = { onDeleteEvent(event.id) }) {
+                                TextButton(
+                                    onClick = {
+                                        eventToDelete = event
+                                        //onDeleteEvent(event.id)
+                                    }
+                                ) {
                                     Text("削除")
                                 }
                             }
@@ -199,6 +205,43 @@ fun HomeScreen(
                         }
                     ) {
                         Text("OK")
+                    }
+                }
+            )
+        }
+
+        eventToDelete?.let { event ->
+            AlertDialog(
+                onDismissRequest = {
+                    eventToDelete = null
+                },
+                title = {
+                    Text("イベントを削除しますか？")
+                },
+                text = {
+                    Text(
+                        "「${event.name}」を削除します。\n\n" +
+                                "登録されているメンバーや支払いデータもすべて削除されます。\n" +
+                                "この操作は元に戻せません。"
+                    )
+                },
+                confirmButton = {
+                    TextButton(
+                        onClick = {
+                            onDeleteEvent(event.id)
+                            eventToDelete = null
+                        }
+                    ) {
+                        Text("削除")
+                    }
+                },
+                dismissButton = {
+                    TextButton(
+                        onClick = {
+                            eventToDelete = null
+                        }
+                    ) {
+                        Text("キャンセル")
                     }
                 }
             )

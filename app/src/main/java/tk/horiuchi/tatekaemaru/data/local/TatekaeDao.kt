@@ -59,4 +59,24 @@ abstract class TatekaeDao {
         if (expenses.isNotEmpty()) insertExpenses(expenses)
         if (targets.isNotEmpty()) insertTargets(targets)
     }
+
+    @Query("""
+        SELECT m.name
+        FROM members m
+        INNER JOIN events e ON m.eventId = e.id
+        WHERE TRIM(m.name) != ''
+        GROUP BY m.name
+        ORDER BY MAX(e.updatedAt) DESC
+    """)
+    abstract suspend fun getMemberNameHistory(): List<String>
+
+    @Query("""
+        SELECT ex.title
+        FROM expenses ex
+        INNER JOIN events e ON ex.eventId = e.id
+        WHERE TRIM(ex.title) != ''
+        GROUP BY ex.title
+        ORDER BY MAX(e.updatedAt) DESC
+    """)
+    abstract suspend fun getExpenseTitleHistory(): List<String>
 }

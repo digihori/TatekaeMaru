@@ -27,4 +27,12 @@ class EventRepository(private val dao: TatekaeDao) {
     suspend fun deleteEvent(eventId: String) {
         dao.deleteEvent(eventId)
     }
+
+    suspend fun getMemberNameHistory(): List<String> {
+        return dao.getMemberNameHistory()
+    }
+
+    suspend fun getExpenseTitleHistory(): List<String> {
+        return dao.getExpenseTitleHistory()
+    }
 }

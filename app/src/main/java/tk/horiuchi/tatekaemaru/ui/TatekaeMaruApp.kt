@@ -12,6 +12,7 @@ import androidx.navigation.compose.NavHost
 import androidx.navigation.compose.composable
 import androidx.navigation.compose.rememberNavController
 import tk.horiuchi.tatekaemaru.data.Event
+import tk.horiuchi.tatekaemaru.data.Member
 import tk.horiuchi.tatekaemaru.data.EventRepository
 import tk.horiuchi.tatekaemaru.data.SampleRepository
 import tk.horiuchi.tatekaemaru.data.local.AppDatabase
@@ -20,6 +21,7 @@ import tk.horiuchi.tatekaemaru.ui.screens.HomeScreen
 import tk.horiuchi.tatekaemaru.ui.screens.PrivacyPolicyScreen
 import tk.horiuchi.tatekaemaru.ui.screens.SettlementScreen
 import kotlinx.coroutines.launch
+import androidx.compose.runtime.LaunchedEffect
 
 object Routes {
     const val Home = "home"
@@ -39,14 +41,27 @@ fun TatekaeMaruApp() {
     val navController = rememberNavController()
     var currentEvent by remember { mutableStateOf(SampleRepository.sampleEvent) }
     val preferences = remember { context.getSharedPreferences("tatekae_maru_settings", android.content.Context.MODE_PRIVATE) }
+    //val myName = preferences.getString("my_name", "自分") ?: "自分"
     var showSampleEvent by remember { mutableStateOf(preferences.getBoolean("show_sample_event", true)) }
+    var memberHistory by remember { mutableStateOf<List<String>>(emptyList()) }
+    var expenseTitleHistory by remember { mutableStateOf<List<String>>(emptyList()) }
+    LaunchedEffect(Unit) {
+        memberHistory = repository.getMemberNameHistory()
+        expenseTitleHistory = repository.getExpenseTitleHistory()
+    }
 
     NavHost(navController = navController, startDestination = Routes.Home) {
         composable(Routes.Home) {
             HomeScreen(
                 events = savedEvents,
                 onCreateEvent = {
-                    currentEvent = Event(name = "")
+                    val latestMyName = preferences.getString("my_name", "自分") ?: "自分"
+                    currentEvent = Event(
+                        name = "",
+                        members = listOf(
+                            Member(name = latestMyName)
+                        )
+                    )
                     navController.navigate(Routes.EventEdit)
                 },
                 onOpenEvent = { eventId ->
@@ -84,6 +99,12 @@ fun TatekaeMaruApp() {
                         navController.popBackStack(Routes.Home, inclusive = false)
                     }
                 },
+                onSaveWithoutBack = { eventToSave ->
+                    scope.launch {
+                        currentEvent = eventToSave
+                        repository.saveEvent(eventToSave)
+                    }
+                },
                 onSaveAndShowSettlement = { eventToSave ->
                     scope.launch {
                         currentEvent = eventToSave
@@ -91,7 +112,17 @@ fun TatekaeMaruApp() {
                         navController.navigate(Routes.Settlement)
                     }
                 },
-                onShowSettlement = { navController.navigate(Routes.Settlement) }
+                //onShowSettlement = { navController.navigate(Routes.Settlement) },
+                onMyNameChanged = { newName ->
+                    preferences.edit()
+                        .putString("my_name", newName)
+                        .apply()
+                },
+                memberHistory = memberHistory,
+                expenseTitleHistory = expenseTitleHistory,
+                onExpenseTitleHistoryChanged = {
+                    expenseTitleHistory = it
+                },
             )
         }
         composable(Routes.Settlement) {
@@ -107,4 +138,5 @@ fun TatekaeMaruApp() {
             )
         }
     }
+
 }
