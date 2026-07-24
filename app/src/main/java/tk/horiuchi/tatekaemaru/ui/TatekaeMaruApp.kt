@@ -92,13 +92,13 @@ fun TatekaeMaruApp() {
                 event = currentEvent,
                 onEventChange = { currentEvent = it },
                 onBack = { navController.popBackStack() },
-                onSave = { eventToSave ->
-                    scope.launch {
-                        currentEvent = eventToSave
-                        repository.saveEvent(eventToSave)
-                        navController.popBackStack(Routes.Home, inclusive = false)
-                    }
-                },
+                //onSave = { eventToSave ->
+                //    scope.launch {
+                //        currentEvent = eventToSave
+                //        repository.saveEvent(eventToSave)
+                //        navController.popBackStack(Routes.Home, inclusive = false)
+                //    }
+                //},
                 onSaveWithoutBack = { eventToSave ->
                     scope.launch {
                         currentEvent = eventToSave

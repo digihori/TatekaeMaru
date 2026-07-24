@@ -41,8 +41,6 @@ import androidx.compose.material3.IconButton
 import androidx.compose.material3.TopAppBarDefaults
 import androidx.compose.ui.graphics.Color
 import androidx.compose.material3.AlertDialog
-import androidx.compose.foundation.layout.Spacer
-import androidx.compose.foundation.layout.height
 import androidx.compose.runtime.mutableStateListOf
 import androidx.compose.foundation.lazy.items
 import androidx.compose.foundation.lazy.rememberLazyListState
@@ -65,7 +63,7 @@ fun EventEditScreen(
     event: Event,
     onEventChange: (Event) -> Unit,
     onBack: () -> Unit,
-    onSave: (Event) -> Unit,
+    //onSave: (Event) -> Unit,
     onSaveWithoutBack: (Event) -> Unit,
     onSaveAndShowSettlement: (Event) -> Unit,
     //onShowSettlement: () -> Unit,
@@ -87,7 +85,7 @@ fun EventEditScreen(
     var distanceKm by remember { mutableStateOf("") }
     var fuelEfficiency by remember { mutableStateOf("") }
     var gasPrice by remember { mutableStateOf("") }
-    var showUnsavedDialog by remember { mutableStateOf(false) }
+//    var showUnsavedDialog by remember { mutableStateOf(false) }
     var memberToDelete by remember { mutableStateOf<Member?>(null) }
     var eventName by remember { mutableStateOf(event.name) }
     val members = remember { mutableStateListOf(*event.members.toTypedArray()) }
@@ -110,38 +108,53 @@ fun EventEditScreen(
         )
     }
 
+    /*
     fun handleBack() {
         val current = buildCurrentEvent()
 
-        // イベント名が完全に空欄なら、自動命名して保存して戻る
-        if (current.name.isBlank()) {
-            val autoNamedEvent = current.copy(
+        val eventToSave = if (current.name.isBlank()) {
+            current.copy(
                 name = LocalDateTime.now().format(
                     java.time.format.DateTimeFormatter.ofPattern(
                         "yyyy/MM/dd HH:mm"
                     )
                 )
             )
-
-            onEventChange(autoNamedEvent)
-            onSaveWithoutBack(autoNamedEvent)
-            onBack()
-            return
-        }
-
-        // 名前を含め、何か未保存の変更があれば確認
-        if (current != event) {
-            showUnsavedDialog = true
         } else {
-            onBack()
+            current.copy(
+                name = current.name.trim()
+            )
         }
+
+        onEventChange(eventToSave)
+        onSaveWithoutBack(eventToSave)
+        onBack()
     }
 
-    fun saveEvent() {
-        val updatedEvent = buildCurrentEvent()
-        onEventChange(updatedEvent)
-        onSave(updatedEvent)
+     */
+    fun handleBack() {
+        val current = buildCurrentEvent()
+
+        val eventToSave = current.copy(
+            name = current.name.trim().ifBlank {
+                LocalDateTime.now().format(
+                    java.time.format.DateTimeFormatter.ofPattern(
+                        "yyyy/MM/dd HH:mm"
+                    )
+                )
+            }
+        )
+
+        onEventChange(eventToSave)
+        onSaveWithoutBack(eventToSave)
+        onBack()
     }
+
+    //fun saveEvent() {
+    //    val updatedEvent = buildCurrentEvent()
+    //    onEventChange(updatedEvent)
+    //    onSave(updatedEvent)
+    //}
 
     fun calculatedGasAmount(): Int? {
         val distance = distanceKm.toDoubleOrNull()
@@ -338,13 +351,14 @@ fun EventEditScreen(
                     placeholder = { Text(placeholderText) },
                     modifier = Modifier
                         .fillMaxWidth()
-                        .onFocusChanged { focusState ->
+                        /*.onFocusChanged { focusState ->
                             if (!focusState.isFocused) {
                                 val updatedEvent = buildCurrentEvent()
                                 onEventChange(updatedEvent)
                                 onSaveWithoutBack(updatedEvent)
                             }
-                        },
+                        }*/
+                        ,
                     singleLine = true
                 )
             }
@@ -820,6 +834,7 @@ fun EventEditScreen(
         }
     }
 
+    /*
     if (showUnsavedDialog) {
         AlertDialog(
             onDismissRequest = {
@@ -868,6 +883,8 @@ fun EventEditScreen(
             confirmButton = {}
         )
     }
+
+     */
     if (showMyNameDialog) {
         AlertDialog(
             onDismissRequest = {

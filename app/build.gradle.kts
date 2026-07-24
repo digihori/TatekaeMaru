@@ -13,8 +13,8 @@ android {
         applicationId = "tk.horiuchi.tatekaemaru"
         minSdk = 26
         targetSdk = 36
-        versionCode = 2
-        versionName = "1.1.0"
+        versionCode = 3
+        versionName = "1.1.1"
     }
 
     buildFeatures {
@@ -27,13 +27,18 @@ kotlin {
     jvmToolchain(21)
 }
 
-android.applicationVariants.all {
-    outputs.all {
-        val appName = project.findProperty("APP_NAME") as? String ?: "TatekaeMaru"
-        val version = versionName ?: "0.0.0"
+afterEvaluate {
+    val appName =
+        android.defaultConfig.applicationId
+            ?.substringAfterLast(".")
+            ?: "app"
 
-        (this as com.android.build.gradle.internal.api.BaseVariantOutputImpl)
-            .outputFileName = "${appName}-${version}.apk"
+    val version =
+        android.defaultConfig.versionName
+            ?: "0.0.0"
+
+    base {
+        archivesName.set("${appName}-${version}")
     }
 }
 
