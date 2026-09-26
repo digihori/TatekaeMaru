@@ -56,6 +56,7 @@ import androidx.compose.material3.HorizontalDivider
 import androidx.compose.ui.platform.LocalFocusManager
 import java.time.LocalDateTime
 import androidx.compose.foundation.layout.imePadding
+import androidx.compose.foundation.layout.navigationBarsPadding
 
 @OptIn(ExperimentalMaterial3Api::class)
 @Composable
@@ -269,6 +270,7 @@ fun EventEditScreen(
                 Row(
                     modifier = Modifier
                         .fillMaxWidth()
+                        .navigationBarsPadding()
                         .imePadding()
                         .padding(horizontal = 12.dp, vertical = 6.dp),
                     horizontalArrangement = Arrangement.spacedBy(8.dp)
@@ -296,6 +298,7 @@ fun EventEditScreen(
                 Column(
                     modifier = Modifier
                         .fillMaxWidth()
+                        .navigationBarsPadding()
                         .padding(horizontal = 12.dp, vertical = 2.dp),
                     verticalArrangement = Arrangement.spacedBy(2.dp)
                 ) {
@@ -1144,4 +1147,3 @@ fun EventEditScreen(
     }
 
 }
-
