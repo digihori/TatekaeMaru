@@ -1,0 +1,32 @@
+# Gradle build cache and generated output
+.gradle/
+.gradle-local/
+.kotlin/
+build/
+**/build/
+
+# Local Android SDK configuration
+local.properties
+
+# Android Studio / IntelliJ IDEA
+.idea/
+*.iml
+
+# Release packages and signing material
+app/release/
+*.apk
+*.aab
+*.apks
+*.jks
+*.keystore
+keystore.properties
+
+# Native and profiling output
+.cxx/
+.externalNativeBuild/
+captures/
+*.hprof
+
+# Operating-system files
+.DS_Store
+Thumbs.db
