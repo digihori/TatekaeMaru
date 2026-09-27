@@ -12,6 +12,9 @@ abstract class TatekaeDao {
     @Query("SELECT * FROM events ORDER BY updatedAt DESC")
     abstract fun observeEvents(): Flow<List<tk.horiuchi.tatekaemaru.data.local.EventEntity>>
 
+    @Query("SELECT COUNT(*) FROM events")
+    abstract suspend fun countEvents(): Int
+
     @Query("SELECT * FROM events WHERE id = :eventId LIMIT 1")
     abstract suspend fun getEvent(eventId: String): tk.horiuchi.tatekaemaru.data.local.EventEntity?
 
@@ -63,20 +66,18 @@ abstract class TatekaeDao {
     @Query("""
         SELECT m.name
         FROM members m
-        INNER JOIN events e ON m.eventId = e.id
         WHERE TRIM(m.name) != ''
         GROUP BY m.name
-        ORDER BY MAX(e.updatedAt) DESC
+        ORDER BY MAX(m.rowid) DESC
     """)
     abstract suspend fun getMemberNameHistory(): List<String>
 
     @Query("""
         SELECT ex.title
         FROM expenses ex
-        INNER JOIN events e ON ex.eventId = e.id
         WHERE TRIM(ex.title) != ''
         GROUP BY ex.title
-        ORDER BY MAX(e.updatedAt) DESC
+        ORDER BY MAX(ex.rowid) DESC
     """)
     abstract suspend fun getExpenseTitleHistory(): List<String>
 }

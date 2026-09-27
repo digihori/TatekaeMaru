@@ -1,5 +1,6 @@
 package tk.horiuchi.tatekaemaru.ui.screens
 
+import androidx.activity.compose.BackHandler
 import androidx.compose.foundation.layout.Arrangement
 import androidx.compose.foundation.layout.Column
 import androidx.compose.foundation.layout.Row
@@ -32,6 +33,7 @@ import tk.horiuchi.tatekaemaru.data.Expense
 import tk.horiuchi.tatekaemaru.data.GasInfo
 import tk.horiuchi.tatekaemaru.data.Member
 import tk.horiuchi.tatekaemaru.ui.FormatUtils
+import tk.horiuchi.tatekaemaru.domain.EventMemberRemoval
 import java.time.LocalDate
 import java.time.format.DateTimeFormatter
 import androidx.compose.material.icons.Icons
@@ -64,10 +66,8 @@ fun EventEditScreen(
     event: Event,
     onEventChange: (Event) -> Unit,
     onBack: () -> Unit,
-    //onSave: (Event) -> Unit,
     onSaveWithoutBack: (Event) -> Unit,
     onSaveAndShowSettlement: (Event) -> Unit,
-    //onShowSettlement: () -> Unit,
     onMyNameChanged: (String) -> Unit,
     memberHistory: List<String>,
     expenseTitleHistory: List<String>,
@@ -86,7 +86,6 @@ fun EventEditScreen(
     var distanceKm by remember { mutableStateOf("") }
     var fuelEfficiency by remember { mutableStateOf("") }
     var gasPrice by remember { mutableStateOf("") }
-//    var showUnsavedDialog by remember { mutableStateOf(false) }
     var memberToDelete by remember { mutableStateOf<Member?>(null) }
     var eventName by remember { mutableStateOf(event.name) }
     val members = remember { mutableStateListOf(*event.members.toTypedArray()) }
@@ -109,30 +108,6 @@ fun EventEditScreen(
         )
     }
 
-    /*
-    fun handleBack() {
-        val current = buildCurrentEvent()
-
-        val eventToSave = if (current.name.isBlank()) {
-            current.copy(
-                name = LocalDateTime.now().format(
-                    java.time.format.DateTimeFormatter.ofPattern(
-                        "yyyy/MM/dd HH:mm"
-                    )
-                )
-            )
-        } else {
-            current.copy(
-                name = current.name.trim()
-            )
-        }
-
-        onEventChange(eventToSave)
-        onSaveWithoutBack(eventToSave)
-        onBack()
-    }
-
-     */
     fun handleBack() {
         val current = buildCurrentEvent()
 
@@ -151,11 +126,7 @@ fun EventEditScreen(
         onBack()
     }
 
-    //fun saveEvent() {
-    //    val updatedEvent = buildCurrentEvent()
-    //    onEventChange(updatedEvent)
-    //    onSave(updatedEvent)
-    //}
+    BackHandler(onBack = ::handleBack)
 
     fun calculatedGasAmount(): Int? {
         val distance = distanceKm.toDoubleOrNull()
@@ -249,7 +220,6 @@ fun EventEditScreen(
                 title = { Text("イベント編集") },
                 navigationIcon = {
                     IconButton(
-                        //onClick = onBack
                         onClick = { handleBack() }
                     ) {
                         Icon(
@@ -352,16 +322,7 @@ fun EventEditScreen(
                     onValueChange = { eventName = it },
                     label = { Text("イベント名") },
                     placeholder = { Text(placeholderText) },
-                    modifier = Modifier
-                        .fillMaxWidth()
-                        /*.onFocusChanged { focusState ->
-                            if (!focusState.isFocused) {
-                                val updatedEvent = buildCurrentEvent()
-                                onEventChange(updatedEvent)
-                                onSaveWithoutBack(updatedEvent)
-                            }
-                        }*/
-                        ,
+                    modifier = Modifier.fillMaxWidth(),
                     singleLine = true
                 )
             }
@@ -540,7 +501,6 @@ fun EventEditScreen(
                             modifier = Modifier.padding(12.dp),
                             verticalArrangement = Arrangement.spacedBy(8.dp)
                         ) {
-                            //Text(if (editingExpenseId == null) "支払項目を追加" else "支払項目を修正")
                             val selectedPayerName =
                                 members.firstOrNull { it.id == payerId }?.name ?: "未選択"
 
@@ -837,57 +797,6 @@ fun EventEditScreen(
         }
     }
 
-    /*
-    if (showUnsavedDialog) {
-        AlertDialog(
-            onDismissRequest = {
-                showUnsavedDialog = false
-            },
-            title = {
-                Text("未保存の変更があります")
-            },
-            text = {
-                Column {
-                    Text("保存してから戻りますか？")
-
-                    Spacer(Modifier.height(16.dp))
-
-                    Button(
-                        onClick = {
-                            saveEvent()
-                            showUnsavedDialog = false
-                            onBack()
-                        },
-                        modifier = Modifier.fillMaxWidth()
-                    ) {
-                        Text("保存して戻る")
-                    }
-
-                    TextButton(
-                        onClick = {
-                            showUnsavedDialog = false
-                            onBack()
-                        },
-                        modifier = Modifier.fillMaxWidth()
-                    ) {
-                        Text("破棄して戻る")
-                    }
-
-                    TextButton(
-                        onClick = {
-                            showUnsavedDialog = false
-                        },
-                        modifier = Modifier.fillMaxWidth()
-                    ) {
-                        Text("キャンセル")
-                    }
-                }
-            },
-            confirmButton = {}
-        )
-    }
-
-     */
     if (showMyNameDialog) {
         AlertDialog(
             onDismissRequest = {
@@ -949,13 +858,13 @@ fun EventEditScreen(
 
     memberToDelete?.let { member ->
 
-        val paidExpenses = expenses.filter {
-            it.payerId == member.id
-        }
-
-        val targetExpenses = expenses.filter {
-            member.id in it.targetMemberIds
-        }
+        val removalPreview = EventMemberRemoval.preview(
+            event = buildCurrentEvent(),
+            memberId = member.id
+        )
+        val paidExpenses = removalPreview.paidExpenses
+        val orphanedExpenses = removalPreview.orphanedExpenses
+        val targetExpenses = removalPreview.expensesLosingTarget
 
         val paidTotal = paidExpenses.sumOf {
             it.amount
@@ -995,9 +904,20 @@ fun EventEditScreen(
                         )
                     }
 
+                    if (orphanedExpenses.isNotEmpty()) {
+                        Text(
+                            "対象者がいなくなるため、次の支払いも削除する必要があります。"
+                        )
+                        orphanedExpenses.forEach { expense ->
+                            Text("・${expense.title}（${FormatUtils.yen(expense.amount)}）")
+                        }
+                        Text("これらの支払いも削除してよいですか？")
+                    }
+
                     if (
                         paidExpenses.isEmpty() &&
-                        targetExpenses.isEmpty()
+                        targetExpenses.isEmpty() &&
+                        orphanedExpenses.isEmpty()
                     ) {
                         Text(
                             "このメンバーをイベントから削除します。"
@@ -1010,28 +930,15 @@ fun EventEditScreen(
             confirmButton = {
                 TextButton(
                     onClick = {
+                        val updatedEvent = EventMemberRemoval.remove(
+                            event = buildCurrentEvent(),
+                            memberId = member.id
+                        )
 
-                        // ここで初めて実際に削除する
-
-                        members.removeAll {
-                            it.id == member.id
-                        }
-
-                        val updatedExpenses = expenses
-                            // この人が支払った項目は削除
-                            .filterNot {
-                                it.payerId == member.id
-                            }
-                            // 他の支払いでは対象者から除外
-                            .map {
-                                it.copy(
-                                    targetMemberIds =
-                                        it.targetMemberIds - member.id
-                                )
-                            }
-
+                        members.clear()
+                        members.addAll(updatedEvent.members)
                         expenses.clear()
-                        expenses.addAll(updatedExpenses)
+                        expenses.addAll(updatedEvent.expenses)
 
                         if (payerId == member.id) {
                             payerId =
@@ -1043,11 +950,10 @@ fun EventEditScreen(
                         targetMemberIds =
                             targetMemberIds - member.id
 
-                        val updatedEvent =
-                            buildCurrentEvent()
+                        val eventToSave = buildCurrentEvent()
 
-                        onEventChange(updatedEvent)
-                        onSaveWithoutBack(updatedEvent)
+                        onEventChange(eventToSave)
+                        onSaveWithoutBack(eventToSave)
 
                         memberToDelete = null
                     }

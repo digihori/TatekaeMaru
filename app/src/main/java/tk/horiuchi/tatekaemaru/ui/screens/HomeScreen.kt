@@ -45,9 +45,6 @@ fun HomeScreen(
     onCreateEvent: () -> Unit,
     onOpenEvent: (String) -> Unit,
     onDeleteEvent: (String) -> Unit,
-    showSampleEvent: Boolean,
-    onOpenSampleEvent: () -> Unit,
-    onDeleteSampleEvent: () -> Unit,
     onOpenPrivacyPolicy: () -> Unit
 ) {
     var menuExpanded by remember { mutableStateOf(false) }
@@ -160,30 +157,6 @@ fun HomeScreen(
                 }
             }
 
-            if (showSampleEvent) {
-                item {
-                    Card(modifier = Modifier.fillMaxWidth()) {
-                        Column(modifier = Modifier.padding(16.dp)) {
-                            Text("サンプル", style = MaterialTheme.typography.titleSmall)
-                            Spacer(Modifier.height(8.dp))
-                            Text("釣り2026/07/05")
-                            Spacer(Modifier.height(8.dp))
-                            Row(
-                                modifier = Modifier.fillMaxWidth(),
-                                horizontalArrangement = Arrangement.SpaceBetween,
-                                verticalAlignment = Alignment.CenterVertically
-                            ) {
-                                OutlinedButton(onClick = onOpenSampleEvent) {
-                                    Text("開く")
-                                }
-                                TextButton(onClick = onDeleteSampleEvent) {
-                                    Text("削除")
-                                }
-                            }
-                        }
-                    }
-                }
-            }
         }
         if (showAboutDialog) {
             AlertDialog(

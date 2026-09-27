@@ -14,12 +14,12 @@ object EventRepositoryMapper {
         val targets: List<tk.horiuchi.tatekaemaru.data.local.ExpenseTargetEntity>
     )
 
-    fun toEntities(event: Event): EntitySet {
+    fun toEntities(event: Event, sortTimestamp: Long): EntitySet {
         val eventEntity = tk.horiuchi.tatekaemaru.data.local.EventEntity(
             id = event.id,
             name = event.name,
             date = event.date.toString(),
-            updatedAt = System.currentTimeMillis()
+            updatedAt = sortTimestamp
         )
         val memberEntities = event.members.map { member ->
             tk.horiuchi.tatekaemaru.data.local.MemberEntity(

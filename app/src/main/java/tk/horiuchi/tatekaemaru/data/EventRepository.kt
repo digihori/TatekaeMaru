@@ -7,6 +7,8 @@ import kotlinx.coroutines.flow.Flow
 class EventRepository(private val dao: TatekaeDao) {
     fun observeEventSummaries(): Flow<List<tk.horiuchi.tatekaemaru.data.local.EventEntity>> = dao.observeEvents()
 
+    suspend fun hasEvents(): Boolean = dao.countEvents() > 0
+
     suspend fun loadEvent(eventId: String): Event? {
         val eventEntity = dao.getEvent(eventId) ?: return null
         val members = dao.getMembers(eventId)
@@ -20,7 +22,9 @@ class EventRepository(private val dao: TatekaeDao) {
     }
 
     suspend fun saveEvent(event: Event) {
-        val mapped = EventRepositoryMapper.toEntities(event)
+        val existingEvent = dao.getEvent(event.id)
+        val sortTimestamp = existingEvent?.updatedAt ?: System.currentTimeMillis()
+        val mapped = EventRepositoryMapper.toEntities(event, sortTimestamp)
         dao.replaceEvent(mapped.event, mapped.members, mapped.expenses, mapped.targets)
     }
 

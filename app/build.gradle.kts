@@ -21,6 +21,17 @@ android {
         compose = true
         buildConfig = true
     }
+
+    buildTypes {
+        debug {
+            applicationIdSuffix = ".debug"
+            versionNameSuffix = "-debug"
+        }
+
+        release {
+            isMinifyEnabled = false
+        }
+    }
 }
 
 kotlin {
@@ -55,4 +66,5 @@ dependencies {
     implementation(libs.androidx.room.runtime)
     implementation(libs.androidx.room.ktx)
     ksp(libs.androidx.room.compiler)
+    testImplementation(libs.junit)
 }

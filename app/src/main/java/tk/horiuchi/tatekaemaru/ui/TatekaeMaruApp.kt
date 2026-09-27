@@ -39,13 +39,20 @@ fun TatekaeMaruApp() {
     val savedEvents by repository.observeEventSummaries().collectAsState(initial = emptyList())
     val scope = rememberCoroutineScope()
     val navController = rememberNavController()
-    var currentEvent by remember { mutableStateOf(SampleRepository.sampleEvent) }
+    var currentEvent by remember { mutableStateOf(Event(name = "")) }
     val preferences = remember { context.getSharedPreferences("tatekae_maru_settings", android.content.Context.MODE_PRIVATE) }
-    //val myName = preferences.getString("my_name", "自分") ?: "自分"
-    var showSampleEvent by remember { mutableStateOf(preferences.getBoolean("show_sample_event", true)) }
     var memberHistory by remember { mutableStateOf<List<String>>(emptyList()) }
     var expenseTitleHistory by remember { mutableStateOf<List<String>>(emptyList()) }
     LaunchedEffect(Unit) {
+        val initialSampleCreated = preferences.getBoolean("initial_sample_created_v1", false)
+        if (!initialSampleCreated) {
+            if (!repository.hasEvents()) {
+                repository.saveEvent(SampleRepository.sampleEvent)
+            }
+            preferences.edit()
+                .putBoolean("initial_sample_created_v1", true)
+                .apply()
+        }
         memberHistory = repository.getMemberNameHistory()
         expenseTitleHistory = repository.getExpenseTitleHistory()
     }
@@ -75,15 +82,6 @@ fun TatekaeMaruApp() {
                 onDeleteEvent = { eventId ->
                     scope.launch { repository.deleteEvent(eventId) }
                 },
-                showSampleEvent = showSampleEvent,
-                onOpenSampleEvent = {
-                    currentEvent = SampleRepository.sampleEvent
-                    navController.navigate(Routes.EventEdit)
-                },
-                onDeleteSampleEvent = {
-                    showSampleEvent = false
-                    preferences.edit().putBoolean("show_sample_event", false).apply()
-                },
                 onOpenPrivacyPolicy = { navController.navigate(Routes.PrivacyPolicy) }
             )
         }
@@ -92,27 +90,19 @@ fun TatekaeMaruApp() {
                 event = currentEvent,
                 onEventChange = { currentEvent = it },
                 onBack = { navController.popBackStack() },
-                //onSave = { eventToSave ->
-                //    scope.launch {
-                //        currentEvent = eventToSave
-                //        repository.saveEvent(eventToSave)
-                //        navController.popBackStack(Routes.Home, inclusive = false)
-                //    }
-                //},
                 onSaveWithoutBack = { eventToSave ->
+                    currentEvent = eventToSave
                     scope.launch {
-                        currentEvent = eventToSave
                         repository.saveEvent(eventToSave)
                     }
                 },
                 onSaveAndShowSettlement = { eventToSave ->
+                    currentEvent = eventToSave
                     scope.launch {
-                        currentEvent = eventToSave
                         repository.saveEvent(eventToSave)
                         navController.navigate(Routes.Settlement)
                     }
                 },
-                //onShowSettlement = { navController.navigate(Routes.Settlement) },
                 onMyNameChanged = { newName ->
                     preferences.edit()
                         .putString("my_name", newName)

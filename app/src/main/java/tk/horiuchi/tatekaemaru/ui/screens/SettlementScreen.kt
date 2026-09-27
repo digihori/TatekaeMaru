@@ -25,8 +25,6 @@ import androidx.compose.material.icons.Icons
 import androidx.compose.material.icons.automirrored.filled.ArrowBack
 import androidx.compose.material3.Icon
 import androidx.compose.material3.IconButton
-import androidx.compose.material3.Scaffold
-import androidx.compose.material3.TopAppBar
 import androidx.compose.material3.TopAppBarDefaults
 import androidx.compose.ui.graphics.Color
 import androidx.compose.material3.Card
@@ -44,31 +42,6 @@ fun SettlementScreen(
     val result = SettlementCalculator.calculate(event)
     val memberName = { memberId: String -> event.members.firstOrNull { it.id == memberId }?.name ?: "不明" }
 
-/*
-    val shareText = buildString {
-        appendLine("【${event.name} 精算】")
-        appendLine()
-        appendLine("参加者：${event.members.joinToString("、") { it.name }}")
-        appendLine()
-        appendLine("支払明細：")
-        event.expenses.forEach { expense ->
-            appendLine("${memberName(expense.payerId)}：${expense.title} ${FormatUtils.yen(expense.amount)}")
-            expense.gasInfo?.let { gas ->
-                appendLine("  ガス代計算：${gas.distanceKm}km ÷ ${gas.fuelEfficiencyKmPerLiter}km/L × ${FormatUtils.yen(gas.gasPricePerLiter)}/L")
-            }
-        }
-        appendLine()
-        appendLine("精算：")
-        if (result.transfers.isEmpty()) {
-            appendLine("精算はありません")
-        } else {
-            result.transfers.forEach { transfer ->
-                appendLine("${memberName(transfer.fromMemberId)} → ${memberName(transfer.toMemberId)}：${FormatUtils.yen(transfer.amount)}")
-            }
-        }
-    }
-
- */
     val totalAmount = event.expenses.sumOf { it.amount }
 
     val shareText = buildString {
@@ -113,7 +86,6 @@ fun SettlementScreen(
     }
 
     Scaffold(
-        //topBar = { TopAppBar(title = { Text("精算結果") }) }
         topBar = {
             TopAppBar(
                 title = {
