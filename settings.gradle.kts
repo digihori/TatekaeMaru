@@ -13,4 +13,4 @@ dependencyResolutionManagement {
     }
 }
 rootProject.name = "TatekaeMaru"
-include(":app")
+include(":app", ":shared")

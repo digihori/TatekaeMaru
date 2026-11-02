@@ -4,7 +4,8 @@ import tk.horiuchi.tatekaemaru.data.Event
 import tk.horiuchi.tatekaemaru.data.Expense
 import tk.horiuchi.tatekaemaru.data.GasInfo
 import tk.horiuchi.tatekaemaru.data.Member
-import java.time.LocalDate
+import kotlinx.datetime.LocalDate
+import tk.horiuchi.tatekaemaru.platform.today
 
 object EventRepositoryMapper {
     data class EntitySet(
@@ -61,7 +62,7 @@ object EventRepositoryMapper {
         return Event(
             id = event.id,
             name = event.name,
-            date = runCatching { LocalDate.parse(event.date) }.getOrDefault(LocalDate.now()),
+            date = runCatching { LocalDate.parse(event.date) }.getOrDefault(today()),
             members = members.map { Member(id = it.id, name = it.name) },
             expenses = expenses.map { expense ->
                 Expense(

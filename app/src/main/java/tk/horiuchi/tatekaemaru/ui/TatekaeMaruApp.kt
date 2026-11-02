@@ -12,13 +12,14 @@ import androidx.navigation.compose.NavHost
 import androidx.navigation.compose.composable
 import androidx.navigation.compose.rememberNavController
 import tk.horiuchi.tatekaemaru.data.Event
-import tk.horiuchi.tatekaemaru.data.Member
+import tk.horiuchi.tatekaemaru.data.AndroidAppSettings
+import tk.horiuchi.tatekaemaru.data.EventSetup
+import tk.horiuchi.tatekaemaru.data.RoomEventRepository
 import tk.horiuchi.tatekaemaru.data.EventRepository
-import tk.horiuchi.tatekaemaru.data.SampleRepository
 import tk.horiuchi.tatekaemaru.data.local.AppDatabase
 import tk.horiuchi.tatekaemaru.ui.screens.EventEditScreen
 import tk.horiuchi.tatekaemaru.ui.screens.HomeScreen
-import tk.horiuchi.tatekaemaru.ui.screens.PrivacyPolicyScreen
+import tk.horiuchi.tatekaemaru.ui.screens.PrivacyPolicyTextScreen
 import tk.horiuchi.tatekaemaru.ui.screens.SettlementScreen
 import kotlinx.coroutines.launch
 import androidx.compose.runtime.LaunchedEffect
@@ -33,26 +34,20 @@ object Routes {
 @Composable
 fun TatekaeMaruApp() {
     val context = LocalContext.current
-    val repository = remember {
-        EventRepository(AppDatabase.getInstance(context).tatekaeDao())
+    val repository: EventRepository = remember {
+        RoomEventRepository(AppDatabase.getInstance(context).tatekaeDao())
     }
-    val savedEvents by repository.observeEventSummaries().collectAsState(initial = emptyList())
+    val summaries = remember(repository) { repository.observeEventSummaries() }
+    val savedEvents by summaries.collectAsState(initial = emptyList())
     val scope = rememberCoroutineScope()
     val navController = rememberNavController()
     var currentEvent by remember { mutableStateOf(Event(name = "")) }
-    val preferences = remember { context.getSharedPreferences("tatekae_maru_settings", android.content.Context.MODE_PRIVATE) }
+    val settings = remember { AndroidAppSettings(context) }
+    val eventSetup = remember(repository, settings) { EventSetup(repository, settings) }
     var memberHistory by remember { mutableStateOf<List<String>>(emptyList()) }
     var expenseTitleHistory by remember { mutableStateOf<List<String>>(emptyList()) }
     LaunchedEffect(Unit) {
-        val initialSampleCreated = preferences.getBoolean("initial_sample_created_v1", false)
-        if (!initialSampleCreated) {
-            if (!repository.hasEvents()) {
-                repository.saveEvent(SampleRepository.sampleEvent)
-            }
-            preferences.edit()
-                .putBoolean("initial_sample_created_v1", true)
-                .apply()
-        }
+        eventSetup.initialize()
         memberHistory = repository.getMemberNameHistory()
         expenseTitleHistory = repository.getExpenseTitleHistory()
     }
@@ -61,14 +56,9 @@ fun TatekaeMaruApp() {
         composable(Routes.Home) {
             HomeScreen(
                 events = savedEvents,
+                versionName = tk.horiuchi.tatekaemaru.BuildConfig.VERSION_NAME,
                 onCreateEvent = {
-                    val latestMyName = preferences.getString("my_name", "自分") ?: "自分"
-                    currentEvent = Event(
-                        name = "",
-                        members = listOf(
-                            Member(name = latestMyName)
-                        )
-                    )
+                    currentEvent = eventSetup.createEvent()
                     navController.navigate(Routes.EventEdit)
                 },
                 onOpenEvent = { eventId ->
@@ -104,9 +94,7 @@ fun TatekaeMaruApp() {
                     }
                 },
                 onMyNameChanged = { newName ->
-                    preferences.edit()
-                        .putString("my_name", newName)
-                        .apply()
+                    settings.myName = newName
                 },
                 memberHistory = memberHistory,
                 expenseTitleHistory = expenseTitleHistory,
@@ -118,12 +106,14 @@ fun TatekaeMaruApp() {
         composable(Routes.Settlement) {
             SettlementScreen(
                 event = currentEvent,
-                onBack = { navController.popBackStack() }
+                onBack = { navController.popBackStack() },
+                onShare = { ShareUtils.shareText(context, it, "精算結果を共有") },
+                onShareToLine = { ShareUtils.shareTextToLine(context, it) }
             )
         }
         composable(Routes.PrivacyPolicy) {
-            PrivacyPolicyScreen(
-                policyUrl = PrivacyPolicyConfig.Url,
+            PrivacyPolicyTextScreen(
+                text = BundledPrivacyPolicy.Text,
                 onBack = { navController.popBackStack() }
             )
         }

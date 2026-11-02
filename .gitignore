@@ -30,3 +30,8 @@ captures/
 # Operating-system files
 .DS_Store
 Thumbs.db
+
+# Xcode local output
+iosApp/build/
+**/xcuserdata/
+*.xcuserstate

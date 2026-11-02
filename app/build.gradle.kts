@@ -1,8 +1,14 @@
+import java.util.Properties
+
 plugins {
     alias(libs.plugins.android.application)
     alias(libs.plugins.kotlin.android)
     alias(libs.plugins.kotlin.compose)
     alias(libs.plugins.ksp)
+}
+
+val appVersion = Properties().apply {
+    rootProject.file("Version.xcconfig").reader(Charsets.UTF_8).use { load(it) }
 }
 
 android {
@@ -13,8 +19,8 @@ android {
         applicationId = "tk.horiuchi.tatekaemaru"
         minSdk = 26
         targetSdk = 36
-        versionCode = 4
-        versionName = "1.1.2"
+        versionCode = appVersion.getProperty("APP_BUILD").toInt()
+        versionName = appVersion.getProperty("APP_VERSION")
     }
 
     buildFeatures {
@@ -29,7 +35,9 @@ android {
         }
 
         release {
-            isMinifyEnabled = false
+            isMinifyEnabled = true
+            isShrinkResources = true
+            proguardFiles(getDefaultProguardFile("proguard-android-optimize.txt"))
         }
     }
 }
@@ -54,6 +62,7 @@ afterEvaluate {
 }
 
 dependencies {
+    implementation(project(":shared"))
     implementation(libs.androidx.core.ktx)
     implementation(libs.androidx.lifecycle.runtime.ktx)
     implementation(libs.androidx.activity.compose)
