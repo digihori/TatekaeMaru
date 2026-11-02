@@ -2,6 +2,7 @@
 .gradle/
 .gradle-local/
 .kotlin/
+.konan/
 build/
 **/build/
 
@@ -14,6 +15,7 @@ local.properties
 
 # Release packages and signing material
 app/release/
+app/debug/
 *.apk
 *.aab
 *.apks
@@ -35,3 +37,24 @@ Thumbs.db
 iosApp/build/
 **/xcuserdata/
 *.xcuserstate
+DerivedData/
+.swiftpm/
+*.xcarchive/
+*.xcresult/
+*.dSYM/
+*.dSYM.zip
+
+# Apple distribution packages and signing material
+*.ipa
+*.p12
+*.pfx
+*.p8
+*.mobileprovision
+*.provisionprofile
+
+# Local credentials and signing configuration
+.env
+.env.*
+!.env.example
+!.env.*.example
+*.local.xcconfig
